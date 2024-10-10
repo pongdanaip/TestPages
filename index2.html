@@ -1,46 +1,60 @@
-<body>
-<script src="//mozilla.github.io/pdf.js/build/pdf.mjs" type="module"></script>	
-
-<style>
-  #pdf-viewer {
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.1);
-    overflow: auto;
-  }
-  
-  .pdf-page-canvas {
-    display: block;
-    margin: 5px auto;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-  }
-</style>
-
-<script>   
-    url = 'https://fin4u-cms-dev.se.scb.co.th/getmedia/24e684a7-b2e3-49a0-9c6c-3bd04f3ff563/SSME-DL_Factsheet.pdf?ext=.pdf#toolbar=0';
-    var thePdf = null;
-    var scale = 1;
-    
-    PDFJS.getDocument(url).promise.then(function(pdf) {
-        thePdf = pdf;
-        viewer = document.getElementById('pdf-viewer');
-        
-        for(page = 1; page <= pdf.numPages; page++) {
-          canvas = document.createElement("canvas");    
-          canvas.className = 'pdf-page-canvas';         
-          viewer.appendChild(canvas);            
-          renderPage(page, canvas);
-        }
-    });
-    
-    function renderPage(pageNumber, canvas) {
-        thePdf.getPage(pageNumber).then(function(page) {
-          viewport = page.getViewport({ scale: scale });
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;          
-          page.render({canvasContext: canvas.getContext('2d'), viewport: viewport});
-    });
-    }
-</script>
-
-<div id='pdf-viewer'></div>
+<html>
+   <head>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <script src="pdf.js"></script>
+      <script src="jquery.js"></script>
+   </head>
+   <body>
+      <h1>PDF.js 'Hello, world!' example</h1>
+      <div id="canvas_div"></div>
+      <body>
+         <script>
+            // If absolute URL from the remote server is provided, configure the CORS
+            // header on that server.
+            var url = 'pdff.pdf';          
+            // Loaded via <script> tag, create shortcut to access PDF.js exports.
+            var pdfjsLib = window['pdfjs-dist/build/pdf'];            
+            // The workerSrc property shall be specified.
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'worker.js';
+            var loadingTask = pdfjsLib.getDocument(url);
+                loadingTask.promise.then(function(pdf) {
+					 var __TOTAL_PAGES = pdf.numPages; 
+					  // Fetch the first page
+					  var pageNumber = 1;			  
+					for( let i=1; i<=__TOTAL_PAGES; i+=1){
+						var id ='the-canvas'+i;
+						$('#canvas_div').append("<div style='background-color:gray;text-align: center;padding:20px;' ><canvas calss='the-canvas' id='"+id+"'></canvas></div>");				
+						  var canvas = document.getElementById(id);
+						  //var pageNumber = 1;
+						  renderPage(canvas, pdf, pageNumber++, function pageRenderingComplete() {
+							if (pageNumber > pdf.numPages) {
+							  return; 
+							}
+							// Continue rendering of the next page
+							renderPage(canvas, pdf, pageNumber++, pageRenderingComplete);
+						  });				
+					}            	  
+                });           
+                function renderPage(canvas, pdf, pageNumber, callback) {
+                  pdf.getPage(pageNumber).then(function(page) {
+                    var scale = 1.5;
+                    var viewport = page.getViewport({scale: scale});            
+                    var pageDisplayWidth = viewport.width;
+                    var pageDisplayHeight = viewport.height;
+            		//var pageDivHolder = document.createElement();
+                    // Prepare canvas using PDF page dimensions
+                    //var canvas = document.createElement(id);
+                    var context = canvas.getContext('2d');
+                    canvas.width = pageDisplayWidth;
+                    canvas.height = pageDisplayHeight;
+                   // pageDivHolder.appendChild(canvas);           
+                    // Render PDF page into canvas context
+                    var renderContext = {
+                      canvasContext: context,
+                      viewport: viewport
+                    };
+                    page.render(renderContext).promise.then(callback);
+                  });
+                }           
+         </script>
+         <html>
